@@ -1,0 +1,3 @@
+# Ignore .txt and .json files only in the top-level directory
+/*.txt
+/*.json
