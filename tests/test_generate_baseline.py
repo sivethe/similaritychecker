@@ -30,7 +30,7 @@ class TestResult:
         self.actual_count = actual_count
 
 class BaselineTestFramework:
-    def __init__(self, test_dir: str = "testData", baseline_script: str = "generate_baseline.py"):
+    def __init__(self, test_dir: str = "testData/generate_baseline", baseline_script: str = "generate_baseline.py"):
         # Determine the working directory (project root)
         # If we're in the tests directory, go up one level
         current_dir = Path.cwd()
@@ -213,8 +213,10 @@ class BaselineTestFramework:
             return
         
         print(f"🔍 Found {len(test_files)} test file(s)")
+        sys.stdout.flush()
         if update_expected:
             print("📝 Update mode: Will update expected outputs")
+            sys.stdout.flush()
         
         for test_file in test_files:
             result = self.run_single_test(test_file, verbose, update_expected)
@@ -224,8 +226,10 @@ class BaselineTestFramework:
                 # Show concise output
                 status = "✅" if result.passed else "❌"
                 print(f"{status} {result.name} ({result.actual_count} strings)")
+                sys.stdout.flush()
             else:
                 print(f"\n{result.message}")
+                sys.stdout.flush()
     
     def print_summary(self) -> None:
         """Print a summary of all test results."""
@@ -237,6 +241,7 @@ class BaselineTestFramework:
         
         print(f"\n{'='*60}")
         print(f"📊 TEST SUMMARY: {passed}/{total} tests passed")
+        sys.stdout.flush()
         
         if passed == total:
             print("🎉 All tests passed!")
@@ -247,6 +252,7 @@ class BaselineTestFramework:
                     print(f"  • {result.name}")
         
         print(f"{'='*60}")
+        sys.stdout.flush()
     
     def has_failures(self) -> bool:
         """Check if any tests failed."""
@@ -271,8 +277,8 @@ Examples:
                        help="Update expected output files instead of testing")
     parser.add_argument("--test", type=str,
                        help="Run specific test (partial name match)")
-    parser.add_argument("--test-dir", default="testData",
-                       help="Directory containing test files (default: testData)")
+    parser.add_argument("--test-dir", default="testData/generate_baseline",
+                       help="Directory containing test files (default: testData/generate_baseline)")
     parser.add_argument("--script", default="generate_baseline.py",
                        help="Path to generate_baseline.py script (default: generate_baseline.py)")
     

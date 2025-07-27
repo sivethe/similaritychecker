@@ -24,11 +24,11 @@ This project provides tools to:
 ├── compare_json_similarity_fast.py # Fast similarity comparison tool
 ├── documentdb_baseline.json       # Main baseline file
 ├── testData/                      # Test data directory
-│   ├── README.md                  # Documentation for test data
-│   ├── testFunction.c             # Test file with single errmsg string
-│   ├── testFunction_output.json   # Expected output for testFunction.c
-│   ├── testMultiLineErrMsg.c      # Test file with multi-line errmsg strings  
-│   └── testMultiLineErrMsg_output.json # Expected output for testMultiLineErrMsg.c
+│   └── generate_baseline/         # Test files for generate_baseline.py
+│       ├── testFunction.c         # Test file with single errmsg string
+│       ├── testFunction_output.json # Expected output for testFunction.c
+│       ├── testMultiLineErrMsg.c  # Test file with multi-line errmsg strings  
+│       └── testMultiLineErrMsg_output.json # Expected output for testMultiLineErrMsg.c
 └── tests/                         # Testing scripts directory
     ├── README.md                  # Documentation for testing framework
     └── test_generate_baseline.py  # Testing framework for generate_baseline.py
