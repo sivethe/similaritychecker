@@ -1,0 +1,9 @@
+[
+  "Invalid field detected: %s - this field type is not supported in the current schema version and should be removed.",
+  "Not an okay, $ prefixed field name.",
+  "Sample function demonstrating multi-line error message handling",
+  "Test adjacent string literals (C++ auto-concatenation)",
+  "The DBRef $ref field must be a String, not a %s",
+  "The DBRef $ref field must be followed by a $id field",
+  "The dollar ($) prefixed field '%s' in '%s' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith."
+]
