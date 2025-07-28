@@ -1,0 +1,5 @@
+[
+    "Updating the path '%s' would create a conflict at '%s'",
+    "Error in function %s at line %d: %s",
+    "Processing %d items with %f%% completion"
+]

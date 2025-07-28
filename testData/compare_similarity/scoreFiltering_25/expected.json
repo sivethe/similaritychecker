@@ -1,0 +1,93 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "cannot perform operation: an index build is currently running for collection",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 100.0,
+        "target_line": "cannot perform operation: an index build is currently running for",
+        "match_type": "target_in_source",
+        "matched_text": "cannot perform operation: an index build is currently running for"
+      },
+      {
+        "target_index": 1,
+        "similarity_score": 100.0,
+        "target_line": "cannot perform operation: an index build is currently running",
+        "match_type": "target_in_source",
+        "matched_text": "cannot perform operation: an index build is currently running"
+      },
+      {
+        "target_index": 2,
+        "similarity_score": 36.36363636363637,
+        "target_line": "Indicates which protocol an index build is using.",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 3,
+        "similarity_score": 36.36363636363637,
+        "target_line": "case when an index build is restarted during recovery.",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 4,
+        "similarity_score": 36.36363636363637,
+        "target_line": "case when an index build is resumed during recovery.",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 5,
+        "similarity_score": 36.36363636363637,
+        "target_line": "or aborting an index build is necessary. There are four scenarios:",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 6,
+        "similarity_score": 36.36363636363637,
+        "target_line": "should exist because an index build is in progress:",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 7,
+        "similarity_score": 33.33333333333333,
+        "target_line": "The collection object should always exist while an index build is registered.",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 8,
+        "similarity_score": 30.76923076923077,
+        "target_line": "Returns true if an index build is in progress on the specified collection.",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 9,
+        "similarity_score": 30.76923076923077,
+        "target_line": "Returns true if an index build is in progress on the specified database.",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 10,
+        "similarity_score": 28.57142857142857,
+        "target_line": "an index build is started, it will be aborted. A recipient shard will copy",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      },
+      {
+        "target_index": 11,
+        "similarity_score": 26.666666666666668,
+        "target_line": "aborting the index build. Once an index build is put into kAborted, the index builder",
+        "match_type": "source_combo_in_target",
+        "matched_text": "an index build is"
+      }
+    ],
+    "match_count": 12
+  }
+]

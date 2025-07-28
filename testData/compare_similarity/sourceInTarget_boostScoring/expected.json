@@ -1,0 +1,79 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "This is a test message for validation",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 90.0,
+        "target_line": "This is a test message for validation and additional content",
+        "match_type": "source_in_target",
+        "matched_text": "this is a test message for validation"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 1,
+    "source_line": "Short test string here now",
+    "target_matches": [
+      {
+        "target_index": 1,
+        "similarity_score": 90.0,
+        "target_line": "Short test string here now and more",
+        "match_type": "source_in_target",
+        "matched_text": "short test string here now"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 2,
+    "source_line": "Another testing phrase that works perfectly",
+    "target_matches": [
+      {
+        "target_index": 2,
+        "similarity_score": 90.0,
+        "target_line": "Another testing phrase that works perfectly",
+        "match_type": "source_in_target",
+        "matched_text": "another testing phrase that works perfectly"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 3,
+    "source_line": "Complete exact match test case here",
+    "target_matches": [
+      {
+        "target_index": 3,
+        "similarity_score": 90.0,
+        "target_line": "Complete exact match test case here with extra words",
+        "match_type": "source_in_target",
+        "matched_text": "complete exact match test case here"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 4,
+    "source_line": "Very long test string with many words here for comprehensive testing purposes",
+    "target_matches": [
+      {
+        "target_index": 4,
+        "similarity_score": 90.0,
+        "target_line": "Very long test string with many words here for comprehensive testing purposes and even more content to make it longer",
+        "match_type": "source_in_target",
+        "matched_text": "very long test string with many words here for comprehensive testing purposes"
+      },
+      {
+        "target_index": 7,
+        "similarity_score": 90.0,
+        "target_line": "Very long test string with many words here for comprehensive testing purposes",
+        "match_type": "source_in_target",
+        "matched_text": "very long test string with many words here for comprehensive testing purposes"
+      }
+    ],
+    "match_count": 2
+  }
+]

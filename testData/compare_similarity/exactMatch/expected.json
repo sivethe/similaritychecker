@@ -1,0 +1,16 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "Connection failed with error code 404",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 100.0,
+        "target_line": "Connection failed with error code 404",
+        "match_type": "source_in_target",
+        "matched_text": "connection failed with error code 404"
+      }
+    ],
+    "match_count": 1
+  }
+]

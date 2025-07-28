@@ -1,0 +1,58 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "Test string here now",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 85.71428571428571,
+        "target_line": "Test string here now and more content",
+        "match_type": "source_in_target",
+        "matched_text": "test string here now"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 1,
+    "source_line": "Short phrase here",
+    "target_matches": [
+      {
+        "target_index": 1,
+        "similarity_score": 49.99999999999999,
+        "target_line": "Short phrase here with additional words and more content",
+        "match_type": "source_in_target",
+        "matched_text": "short phrase here"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 2,
+    "source_line": "A longer testing message with several words",
+    "target_matches": [
+      {
+        "target_index": 2,
+        "similarity_score": 90.0,
+        "target_line": "A longer testing message with several words and even more",
+        "match_type": "source_in_target",
+        "matched_text": "a longer testing message with several words"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 3,
+    "source_line": "Very brief test",
+    "target_matches": [
+      {
+        "target_index": 3,
+        "similarity_score": 49.99999999999999,
+        "target_line": "Very brief test with many additional words here now",
+        "match_type": "source_in_target",
+        "matched_text": "very brief test"
+      }
+    ],
+    "match_count": 1
+  }
+]

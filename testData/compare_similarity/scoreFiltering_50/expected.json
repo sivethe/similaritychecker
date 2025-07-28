@@ -1,0 +1,23 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "cannot perform operation: an index build is currently running for collection",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 100.0,
+        "target_line": "cannot perform operation: an index build is currently running for",
+        "match_type": "target_in_source",
+        "matched_text": "cannot perform operation: an index build is currently running for"
+      },
+      {
+        "target_index": 1,
+        "similarity_score": 100.0,
+        "target_line": "cannot perform operation: an index build is currently running",
+        "match_type": "target_in_source",
+        "matched_text": "cannot perform operation: an index build is currently running"
+      }
+    ],
+    "match_count": 2
+  }
+]

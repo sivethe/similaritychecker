@@ -1,0 +1,17 @@
+[
+    "cannot perform operation: an index build is currently running for",
+    "cannot perform operation: an index build is currently running",
+    "Indicates which protocol an index build is using.",
+    "case when an index build is restarted during recovery.",
+    "case when an index build is resumed during recovery.",
+    "or aborting an index build is necessary. There are four scenarios:",
+    "should exist because an index build is in progress:",
+    "The collection object should always exist while an index build is registered.",
+    "Returns true if an index build is in progress on the specified collection.",
+    "Returns true if an index build is in progress on the specified database.",
+    "an index build is started, it will be aborted. A recipient shard will copy",
+    "aborting the index build. Once an index build is put into kAborted, the index builder",
+    "Once an index build is in-progress it is eligible for transition to any of the commit states. It is also abortable.",
+    "Checks that an index build is allowed to start on the specified namespace. Returns UserWritesBlocked if user index builds are disallowed, OK otherwise.",
+    "Takes an index spec object for this index and returns a copy tweaked to conform to the expected format. When an index build is initiated, this function is called on the spec object the user provides, and the return value of this function is the final spec object that gets saved in the index catalog. Returns a non-OK status if 'specObj' is invalid."
+]

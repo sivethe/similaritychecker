@@ -1,0 +1,16 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "%d indexes found for key: %s, identify by name instead. Conflicting indexes: %s, %s",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 100.0,
+        "target_line": "indexes found for key:",
+        "match_type": "target_in_source",
+        "matched_text": "indexes found for key:"
+      }
+    ],
+    "match_count": 1
+  }
+]

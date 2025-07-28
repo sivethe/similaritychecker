@@ -1,0 +1,44 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "This is a longer test message with additional content here",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 90.0,
+        "target_line": "This is a longer test message",
+        "match_type": "target_in_source",
+        "matched_text": "this is a longer test message"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 1,
+    "source_line": "Another comprehensive testing string with many words for validation purposes",
+    "target_matches": [
+      {
+        "target_index": 1,
+        "similarity_score": 60.0,
+        "target_line": "Another comprehensive testing string",
+        "match_type": "target_in_source",
+        "matched_text": "another comprehensive testing string"
+      }
+    ],
+    "match_count": 1
+  },
+  {
+    "source_index": 2,
+    "source_line": "Very detailed test case with extensive content for thorough testing",
+    "target_matches": [
+      {
+        "target_index": 2,
+        "similarity_score": 60.0,
+        "target_line": "Very detailed test case",
+        "match_type": "target_in_source",
+        "matched_text": "very detailed test case"
+      }
+    ],
+    "match_count": 1
+  }
+]

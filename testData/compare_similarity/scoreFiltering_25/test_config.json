@@ -1,0 +1,4 @@
+{
+    "min_score": 25.0,
+    "description": "Test similarity score filtering with minimum score of 25"
+}

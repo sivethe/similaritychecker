@@ -1,0 +1,86 @@
+[
+  {
+    "source_index": 0,
+    "source_line": "Updating the path '%s' would create a conflict at '%s'",
+    "target_matches": [
+      {
+        "target_index": 0,
+        "similarity_score": 100.0,
+        "target_line": "Updating the path 'a' would create a conflict at 'a'",
+        "match_type": "format_specifier_match",
+        "matched_text": "updating the path '%s' would create a conflict at '%s'"
+      },
+      {
+        "target_index": 1,
+        "similarity_score": 100.0,
+        "target_line": "Updating the path 'a.$.b' would create a conflict at 'a.$'",
+        "match_type": "format_specifier_match",
+        "matched_text": "updating the path '%s' would create a conflict at '%s'"
+      },
+      {
+        "target_index": 2,
+        "similarity_score": 100.0,
+        "target_line": "Updating the path '/home/user/file.txt' would create a conflict at '/tmp/backup'",
+        "match_type": "format_specifier_match",
+        "matched_text": "updating the path '%s' would create a conflict at '%s'"
+      }
+    ],
+    "match_count": 3
+  },
+  {
+    "source_index": 1,
+    "source_line": "Error in function %s at line %d: %s",
+    "target_matches": [
+      {
+        "target_index": 10,
+        "similarity_score": 100.0,
+        "target_line": "Error in function",
+        "match_type": "target_in_source",
+        "matched_text": "error in function"
+      },
+      {
+        "target_index": 3,
+        "similarity_score": 82.85714285714286,
+        "target_line": "Error in function main at line 42: null pointer exception",
+        "match_type": "format_specifier_match",
+        "matched_text": "error in function %s at line %d: %s"
+      },
+      {
+        "target_index": 4,
+        "similarity_score": 82.85714285714286,
+        "target_line": "Error in function process_data at line 156: buffer overflow",
+        "match_type": "format_specifier_match",
+        "matched_text": "error in function %s at line %d: %s"
+      }
+    ],
+    "match_count": 3
+  },
+  {
+    "source_index": 2,
+    "source_line": "Processing %d items with %f%% completion",
+    "target_matches": [
+      {
+        "target_index": 5,
+        "similarity_score": 100.0,
+        "target_line": "Processing 100 items with 95.5% completion",
+        "match_type": "format_specifier_match",
+        "matched_text": "processing %d items with %f%% completion"
+      },
+      {
+        "target_index": 6,
+        "similarity_score": 100.0,
+        "target_line": "Processing 0 items with 0.0% completion",
+        "match_type": "format_specifier_match",
+        "matched_text": "processing %d items with %f%% completion"
+      },
+      {
+        "target_index": 7,
+        "similarity_score": 100.0,
+        "target_line": "Processing 999999 items with 100.0% completion",
+        "match_type": "format_specifier_match",
+        "matched_text": "processing %d items with %f%% completion"
+      }
+    ],
+    "match_count": 3
+  }
+]

@@ -1,0 +1,14 @@
+[
+    "Updating the path 'a' would create a conflict at 'a'",
+    "Updating the path 'a.$.b' would create a conflict at 'a.$'",
+    "Updating the path '/home/user/file.txt' would create a conflict at '/tmp/backup'",
+    "Error in function main at line 42: null pointer exception",
+    "Error in function process_data at line 156: buffer overflow",
+    "Processing 100 items with 95.5% completion",
+    "Processing 0 items with 0.0% completion",
+    "Processing 999999 items with 100.0% completion",
+    "Some other unrelated message",
+    "Path conflict detected",
+    "Error in function",
+    "Processing items"
+]
