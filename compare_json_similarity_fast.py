@@ -152,15 +152,9 @@ def is_substring_match(source, target, min_words=4):
     
     # Check for full string matches
     if source_norm in target_norm:
-        # Calculate base score and apply 50% boost (capped at 90%)
-        base_score = (len(source_norm.split()) / len(target_norm.split())) * 100
-        boosted_score = min(90.0, base_score * 1.5)  # 50% boost, capped at 90%
-        return True, "source_in_target", source_norm, boosted_score
+        return True, "source_in_target", source_norm, 100.0
     if target_norm in source_norm:
-        # Calculate base score and apply 50% boost (capped at 90%)
-        base_score = (len(target_norm.split()) / len(source_norm.split())) * 100
-        boosted_score = min(90.0, base_score * 1.5)  # 50% boost, capped at 90%
-        return True, "target_in_source", target_norm, boosted_score
+        return True, "target_in_source", target_norm, 100.0
     
     # Check for word combination matches
     source_combinations = get_word_combinations(source_norm, min_words)
@@ -424,9 +418,7 @@ def compare_json_lines_ultra_fast(source_data, target_data, min_words=4, batch_s
                     
                     # Check substring matches
                     if source_norm in target_norm:
-                        # Calculate base score and apply 50% boost (capped at 90%)
-                        base_score = (len(source_norm.split()) / len(target_norm.split())) * 100
-                        score = min(90.0, base_score * 1.5)  # 50% boost, capped at 90%
+                        score = (len(source_norm.split()) / len(target_norm.split())) * 100
                         target_matches.append({
                             "target_index": target_idx,
                             "similarity_score": score,
@@ -435,9 +427,7 @@ def compare_json_lines_ultra_fast(source_data, target_data, min_words=4, batch_s
                             "matched_text": source_norm
                         })
                     elif target_norm in source_norm:
-                        # Calculate base score and apply 50% boost (capped at 90%)
-                        base_score = (len(target_norm.split()) / len(source_norm.split())) * 100
-                        score = min(90.0, base_score * 1.5)  # 50% boost, capped at 90%
+                        score = (len(target_norm.split()) / len(source_norm.split())) * 100
                         target_matches.append({
                             "target_index": target_idx,
                             "similarity_score": score,
@@ -565,9 +555,7 @@ def compare_json_lines_ultra_fast(source_data, target_data, min_words=4, batch_s
             if target_norm in source_norm:
                 # Avoid duplicates
                 if not any(match["target_index"] == target_idx for match in target_matches):
-                    # Calculate base score and apply 50% boost (capped at 90%)
-                    base_score = (len(target_norm.split()) / len(source_norm.split())) * 100
-                    score = min(90.0, base_score * 1.5)  # 50% boost, capped at 90%
+                    score = (len(target_norm.split()) / len(source_norm.split())) * 100
                     target_matches.append({
                         "target_index": target_idx,
                         "similarity_score": score,
