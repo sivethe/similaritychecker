@@ -132,6 +132,21 @@ def get_word_combinations(text, min_words=4):
     
     return combinations
 
+def get_word_combinations_limited(text, min_words=4, max_combinations=10):
+    """Get limited word combinations for performance optimization."""
+    words = text.split()
+    combinations = []
+    
+    # Prioritize longer combinations first for better matches
+    for length in range(min(len(words), min_words + 5), min_words - 1, -1):
+        for start in range(len(words) - length + 1):
+            if len(combinations) >= max_combinations:
+                return combinations
+            combination = ' '.join(words[start:start + length])
+            combinations.append(combination)
+    
+    return combinations
+
 def is_substring_match(source, target, min_words=4):
     """
     Check if source and target have substring matches.
@@ -355,33 +370,116 @@ def compare_json_lines_ultra_fast(source_data, target_data, min_words=4, batch_s
     print("Using ultra-fast algorithm with advanced optimizations...")
     print(f"Minimum word combination length: {min_words}")
     
-    # Pre-filter and create lookup structures
-    filtered_source = [(i, line) for i, line in enumerate(source_data) if len(line.split()) >= 3]
-    filtered_target = [(i, line) for i, line in enumerate(target_data) if len(line.split()) >= 3]
+    # Pre-filter and pre-normalize all data once
+    print("Pre-processing and filtering data...")
+    filtered_source = []
+    for i, line in enumerate(source_data):
+        words = line.split()
+        if len(words) >= 3:
+            norm = normalize_text(line)
+            filtered_source.append((i, line, norm, words))
     
-    # For very large datasets, avoid building the full lookup table
+    filtered_target = []
+    for i, line in enumerate(target_data):
+        words = line.split()
+        if len(words) >= 3:
+            norm = normalize_text(line)
+            filtered_target.append((i, line, norm, words))
+    
+    print(f"After filtering: {len(filtered_source)} source, {len(filtered_target)} target lines")
+    
+    # Build efficient lookup structures
+    print("Building optimized lookup structures...")
+    
+    # For exact matches - simple dict
+    exact_lookup = {}
+    # For substring matches - dict of normalized text to list of targets
+    target_by_norm = {}
+    # For word combinations - dict of combinations to targets (limited)
+    combo_lookup = {}
+    
+    for target_idx, target_line, target_norm, target_words in filtered_target:
+        # Exact match lookup
+        if target_norm not in exact_lookup:
+            exact_lookup[target_norm] = []
+        exact_lookup[target_norm].append((target_idx, target_line))
+        
+        # Substring lookup
+        target_by_norm[target_norm] = (target_idx, target_line, len(target_words))
+        
+        # Limited word combinations for performance
+        if len(target_words) <= 20:  # Only for reasonable length strings
+            combinations = get_word_combinations_limited(target_norm, min_words, max_combinations=10)
+            for combo in combinations:
+                if combo not in combo_lookup:
+                    combo_lookup[combo] = []
+                if len(combo_lookup[combo]) < 5:  # Limit to prevent memory explosion
+                    combo_lookup[combo].append((target_idx, target_line, len(combo.split())))
+    
+    # For very large datasets, use streaming approach
+    # For very large datasets, use streaming approach
     if len(filtered_target) > 50000:
-        print("Large dataset detected - using memory-efficient algorithm...")
-        # Process without pre-building lookup table to save memory
-        for source_idx, source_line in tqdm(filtered_source, desc="Comparing lines", unit="line"):
-            source_norm = normalize_text(source_line)
-            target_matches = []
-            
-            # Process targets in chunks to avoid memory issues
-            chunk_size = 10000
-            for chunk_start in range(0, len(filtered_target), chunk_size):
-                chunk_end = min(chunk_start + chunk_size, len(filtered_target))
-                target_chunk = filtered_target[chunk_start:chunk_end]
-                
-                for target_idx, target_line in target_chunk:
-                    target_norm = normalize_text(target_line)
-                    
-                    # Quick length check for optimization
-                    len_ratio = min(len(source_norm), len(target_norm)) / max(len(source_norm), len(target_norm))
-                    if len_ratio < 0.1 and source_norm not in target_norm and target_norm not in source_norm:
-                        continue
-                    
-                    # Check format specifier matches first
+        print("Large dataset detected - using memory-efficient streaming algorithm...")
+        return process_large_dataset_optimized(filtered_source, filtered_target, min_words)
+    
+    # Process source lines with optimized lookups
+    print("Processing source lines with optimized lookups...")
+    for source_idx, source_line, source_norm, source_words in tqdm(filtered_source, desc="Comparing lines", unit="line"):
+        target_matches = []
+        
+        # 1. Quick exact match check (O(1))
+        if source_norm in exact_lookup:
+            for target_idx, target_line in exact_lookup[source_norm]:
+                target_matches.append({
+                    "target_index": target_idx,
+                    "similarity_score": 100.0,
+                    "target_line": target_line,
+                    "match_type": "exact_match",
+                    "matched_text": source_norm
+                })
+        
+        # 2. Fast substring matching - check if source is contained in any target
+        for target_norm, (target_idx, target_line, target_word_count) in target_by_norm.items():
+            if source_norm in target_norm and source_norm != target_norm:
+                score = (len(source_words) / target_word_count) * 100
+                target_matches.append({
+                    "target_index": target_idx,
+                    "similarity_score": score,
+                    "target_line": target_line,
+                    "match_type": "source_in_target",
+                    "matched_text": source_norm
+                })
+            elif target_norm in source_norm and source_norm != target_norm:
+                score = (target_word_count / len(source_words)) * 100
+                target_matches.append({
+                    "target_index": target_idx,
+                    "similarity_score": score,
+                    "target_line": target_line,
+                    "match_type": "target_in_source",
+                    "matched_text": target_norm
+                })
+        
+        # 3. Word combination matching (limited for performance)
+        if len(target_matches) < 5:  # Only if we don't have many matches already
+            source_combinations = get_word_combinations_limited(source_norm, min_words, max_combinations=5)
+            for combo in source_combinations:
+                if combo in combo_lookup:
+                    for target_idx, target_line, combo_word_count in combo_lookup[combo]:
+                        # Avoid duplicates
+                        if not any(match["target_index"] == target_idx for match in target_matches):
+                            score = (combo_word_count / max(len(source_words), len(target_line.split()))) * 100
+                            target_matches.append({
+                                "target_index": target_idx,
+                                "similarity_score": score,
+                                "target_line": target_line,
+                                "match_type": "source_combo_in_target",
+                                "matched_text": combo
+                            })
+        
+        # 4. Format specifier matching (only for lines with % symbols for efficiency)
+        if '%' in source_line and len(target_matches) < 10:
+            for target_idx, target_line, target_norm, target_words in filtered_target[:1000]:  # Limit search
+                if not any(match["target_index"] == target_idx for match in target_matches):
                     is_format_match, format_match_type, format_matched_text, format_score = is_format_specifier_match(source_line, target_line)
                     if is_format_match:
                         target_matches.append({
@@ -391,171 +489,62 @@ def compare_json_lines_ultra_fast(source_data, target_data, min_words=4, batch_s
                             "match_type": format_match_type,
                             "matched_text": format_matched_text
                         })
-                        continue
-                    
-                    # Check reverse format specifier matches
-                    is_reverse_format_match, reverse_format_match_type, reverse_format_matched_text, reverse_format_score = is_format_specifier_match(target_line, source_line)
-                    if is_reverse_format_match:
-                        target_matches.append({
-                            "target_index": target_idx,
-                            "similarity_score": reverse_format_score,
-                            "target_line": target_line,
-                            "match_type": "reverse_" + reverse_format_match_type,
-                            "matched_text": reverse_format_matched_text
-                        })
-                        continue
-                    
-                    # Check exact matches
-                    if source_norm == target_norm:
-                        target_matches.append({
-                            "target_index": target_idx,
-                            "similarity_score": 100.0,
-                            "target_line": target_line,
-                            "match_type": "exact_match",
-                            "matched_text": source_norm
-                        })
-                        continue
-                    
-                    # Check substring matches
-                    if source_norm in target_norm:
-                        score = (len(source_norm.split()) / len(target_norm.split())) * 100
-                        target_matches.append({
-                            "target_index": target_idx,
-                            "similarity_score": score,
-                            "target_line": target_line,
-                            "match_type": "source_in_target",
-                            "matched_text": source_norm
-                        })
-                    elif target_norm in source_norm:
-                        score = (len(target_norm.split()) / len(source_norm.split())) * 100
-                        target_matches.append({
-                            "target_index": target_idx,
-                            "similarity_score": score,
-                            "target_line": target_line,
-                            "match_type": "target_in_source",
-                            "matched_text": target_norm
-                        })
-                    else:
-                        # Check word combinations only if no full string matches
-                        source_combinations = get_word_combinations(source_norm, min_words)
-                        for combo in source_combinations:
-                            if combo in target_norm:
-                                score = (len(combo.split()) / max(len(source_norm.split()), len(target_norm.split()))) * 100
-                                # Avoid duplicates
-                                if not any(match["target_index"] == target_idx for match in target_matches):
-                                    target_matches.append({
-                                        "target_index": target_idx,
-                                        "similarity_score": score,
-                                        "target_line": target_line,
-                                        "match_type": "source_combo_in_target",
-                                        "matched_text": combo
-                                    })
-                                break  # Only take the first match to avoid duplicates
-            
-            # Only add if there were matches
-            if target_matches:
-                # Sort matches by similarity score (highest first)
-                target_matches.sort(key=lambda x: x["similarity_score"], reverse=True)
-                matched_lines.append({
-                    "source_index": source_idx,
-                    "source_line": source_line,
-                    "target_matches": target_matches,
-                    "match_count": len(target_matches)
-                })
         
-        return matched_lines
-    
-    # Original ultra-fast algorithm for smaller datasets
-    # Create normalized target lookup for faster searching
-    target_lookup = {}
-    print("Building target lookup table...")
-    for idx, line in tqdm(filtered_target, desc="Indexing targets"):
-        normalized = normalize_text(line)
-        target_lookup[normalized] = (idx, line)
-        
-        # Also index word combinations (but limit to avoid memory issues)
-        combinations = get_word_combinations(normalized, min_words)
-        for combo in combinations[:50]:  # Limit combinations to prevent memory explosion
-            if combo not in target_lookup:
-                target_lookup[combo] = (idx, line)
-    
-    print("Processing source lines...")
-    for source_idx, source_line in tqdm(filtered_source, desc="Comparing lines", unit="line"):
-        source_norm = normalize_text(source_line)
-        target_matches = []
-        
-        # Check for format specifier matches first
-        for target_idx, target_line in filtered_target:
-            # Check format specifier matches
-            is_format_match, format_match_type, format_matched_text, format_score = is_format_specifier_match(source_line, target_line)
-            if is_format_match:
-                target_matches.append({
-                    "target_index": target_idx,
-                    "similarity_score": format_score,
-                    "target_line": target_line,
-                    "match_type": format_match_type,
-                    "matched_text": format_matched_text
-                })
-                continue
-            
-            # Check reverse format specifier matches
-            is_reverse_format_match, reverse_format_match_type, reverse_format_matched_text, reverse_format_score = is_format_specifier_match(target_line, source_line)
-            if is_reverse_format_match:
-                target_matches.append({
-                    "target_index": target_idx,
-                    "similarity_score": reverse_format_score,
-                    "target_line": target_line,
-                    "match_type": "reverse_" + reverse_format_match_type,
-                    "matched_text": reverse_format_matched_text
-                })
-        
-        # If we already have format specifier matches, skip other checks to avoid duplicates
+        # Only add if there were matches
         if target_matches:
-            # Sort matches by similarity score (highest first)
+            # Sort matches by similarity score (highest first) and limit results
             target_matches.sort(key=lambda x: x["similarity_score"], reverse=True)
+            # Limit to top 20 matches to prevent memory issues
+            target_matches = target_matches[:20]
+            
             matched_lines.append({
                 "source_index": source_idx,
                 "source_line": source_line,
                 "target_matches": target_matches,
                 "match_count": len(target_matches)
             })
-            continue
+    
+    return matched_lines
+
+def process_large_dataset_optimized(filtered_source, filtered_target, min_words):
+    """Optimized processing for very large datasets with memory efficiency."""
+    matched_lines = []
+    
+    # Build minimal lookup structures for large datasets
+    target_norms = {}
+    for target_idx, target_line, target_norm, target_words in filtered_target:
+        target_norms[target_norm] = (target_idx, target_line, len(target_words))
+    
+    # Process in smaller batches
+    batch_size = 100
+    for batch_start in range(0, len(filtered_source), batch_size):
+        batch_end = min(batch_start + batch_size, len(filtered_source))
+        source_batch = filtered_source[batch_start:batch_end]
         
-        # Quick exact match check
-        if source_norm in target_lookup:
-            idx, target_line = target_lookup[source_norm]
-            target_matches.append({
-                "target_index": idx,
-                "similarity_score": 100.0,
-                "target_line": target_line,
-                "match_type": "exact_match",
-                "matched_text": source_norm
-            })
-        
-        # Check source combinations against targets
-        source_combinations = get_word_combinations(source_norm, min_words)
-        for combo in source_combinations:
-            if combo in target_lookup:
-                idx, target_line = target_lookup[combo]
-                score = (len(combo.split()) / max(len(source_norm.split()), len(normalize_text(target_line).split()))) * 100
-                
-                # Avoid duplicates
-                if not any(match["target_index"] == idx for match in target_matches):
+        for source_idx, source_line, source_norm, source_words in tqdm(source_batch, desc=f"Batch {batch_start//batch_size + 1}", leave=False):
+            target_matches = []
+            
+            # Fast exact and substring matching only
+            for target_norm, (target_idx, target_line, target_word_count) in target_norms.items():
+                if source_norm == target_norm:
                     target_matches.append({
-                        "target_index": idx,
+                        "target_index": target_idx,
+                        "similarity_score": 100.0,
+                        "target_line": target_line,
+                        "match_type": "exact_match",
+                        "matched_text": source_norm
+                    })
+                elif source_norm in target_norm:
+                    score = (len(source_words) / target_word_count) * 100
+                    target_matches.append({
+                        "target_index": target_idx,
                         "similarity_score": score,
                         "target_line": target_line,
-                        "match_type": "source_combo_in_target",
-                        "matched_text": combo
+                        "match_type": "source_in_target",
+                        "matched_text": source_norm
                     })
-        
-        # Check if any target appears in source (limited search for memory efficiency)
-        for target_idx, target_line in filtered_target[:10000]:  # Limit search to first 10k
-            target_norm = normalize_text(target_line)
-            if target_norm in source_norm:
-                # Avoid duplicates
-                if not any(match["target_index"] == target_idx for match in target_matches):
-                    score = (len(target_norm.split()) / len(source_norm.split())) * 100
+                elif target_norm in source_norm:
+                    score = (target_word_count / len(source_words)) * 100
                     target_matches.append({
                         "target_index": target_idx,
                         "similarity_score": score,
@@ -563,17 +552,17 @@ def compare_json_lines_ultra_fast(source_data, target_data, min_words=4, batch_s
                         "match_type": "target_in_source",
                         "matched_text": target_norm
                     })
-        
-        # Only add if there were matches
-        if target_matches:
-            # Sort matches by similarity score (highest first)
-            target_matches.sort(key=lambda x: x["similarity_score"], reverse=True)
-            matched_lines.append({
-                "source_index": source_idx,
-                "source_line": source_line,
-                "target_matches": target_matches,
-                "match_count": len(target_matches)
-            })
+            
+            if target_matches:
+                target_matches.sort(key=lambda x: x["similarity_score"], reverse=True)
+                target_matches = target_matches[:10]  # Limit for large datasets
+                
+                matched_lines.append({
+                    "source_index": source_idx,
+                    "source_line": source_line,
+                    "target_matches": target_matches,
+                    "match_count": len(target_matches)
+                })
     
     return matched_lines
 
