@@ -93,6 +93,24 @@ def is_format_specifier_match(source, target):
     source_norm = normalize_text(source)
     target_norm = normalize_text(target)
     
+    # Special case: if both source and target have format specifiers,
+    # compare them by converting format specifiers to a common pattern
+    if has_format_specifiers(target):
+        # Convert both to normalized patterns for comparison
+        source_pattern = re.sub(r'%[-#+ 0]*\*?(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGaAcspn%]', '%FORMAT%', source_norm)
+        target_pattern = re.sub(r'%[-#+ 0]*\*?(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGaAcspn%]', '%FORMAT%', target_norm)
+        
+        if source_pattern == target_pattern:
+            # Calculate similarity based on how many format specifiers match the same positions
+            source_specs = re.findall(r'%[-#+ 0]*\*?(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGaAcspn%]', source_norm)
+            target_specs = re.findall(r'%[-#+ 0]*\*?(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGaAcspn%]', target_norm)
+            
+            if len(source_specs) == len(target_specs):
+                # High score for same structure, even with different format specifier types
+                score = 85.0
+                return True, "format_specifier_match", source_norm, score
+    
+    # Original logic: source has format specifiers, target has actual values
     # Convert source to regex pattern
     try:
         pattern = convert_to_regex_pattern(source_norm)
@@ -512,8 +530,11 @@ def process_large_dataset_optimized(filtered_source, filtered_target, min_words)
     
     # Build minimal lookup structures for large datasets
     target_norms = {}
+    target_by_index = {}  # Keep access to original lines for format specifier matching
+    
     for target_idx, target_line, target_norm, target_words in filtered_target:
         target_norms[target_norm] = (target_idx, target_line, len(target_words))
+        target_by_index[target_idx] = (target_line, target_norm, len(target_words))
     
     # Process in smaller batches
     batch_size = 100
@@ -552,6 +573,56 @@ def process_large_dataset_optimized(filtered_source, filtered_target, min_words)
                         "match_type": "target_in_source",
                         "matched_text": target_norm
                     })
+            
+            # Add format specifier matching for large datasets (improved sampling)
+            if '%' in source_line and len(target_matches) < 5:
+                # For large datasets, use better sampling strategy
+                # Strategy 1: Sample from beginning, middle, and end sections
+                total_targets = len(filtered_target)
+                sample_size = min(5000, total_targets)
+                
+                # Take samples from different sections to ensure coverage
+                section_size = total_targets // 3
+                samples_per_section = sample_size // 3
+                
+                sampled_targets = []
+                # Beginning section
+                step1 = max(1, section_size // samples_per_section)
+                sampled_targets.extend(filtered_target[0:section_size:step1])
+                
+                # Middle section  
+                step2 = max(1, section_size // samples_per_section)
+                sampled_targets.extend(filtered_target[section_size:2*section_size:step2])
+                
+                # End section
+                step3 = max(1, section_size // samples_per_section)
+                sampled_targets.extend(filtered_target[2*section_size::step3])
+                
+                # Strategy 2: Also include lines with format specifiers for better accuracy
+                format_targets = [t for t in filtered_target[:10000] if '%' in t[1]]  # Check first 10k for format specifiers
+                sampled_targets.extend(format_targets[:1000])  # Add up to 1000 format specifier lines
+                
+                # Remove duplicates by target_idx
+                seen_indices = set()
+                unique_targets = []
+                for target_idx, target_line, target_norm, target_words in sampled_targets:
+                    if target_idx not in seen_indices:
+                        seen_indices.add(target_idx)
+                        unique_targets.append((target_idx, target_line, target_norm, target_words))
+                
+                for target_idx, target_line, target_norm, target_words in unique_targets:
+                    if not any(match["target_index"] == target_idx for match in target_matches):
+                        is_format_match, format_match_type, format_matched_text, format_score = is_format_specifier_match(source_line, target_line)
+                        if is_format_match:
+                            target_matches.append({
+                                "target_index": target_idx,
+                                "similarity_score": format_score,
+                                "target_line": target_line,
+                                "match_type": format_match_type,
+                                "matched_text": format_matched_text
+                            })
+                            # Only add first format match to keep performance reasonable
+                            break
             
             if target_matches:
                 target_matches.sort(key=lambda x: x["similarity_score"], reverse=True)
