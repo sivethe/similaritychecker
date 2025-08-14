@@ -66,10 +66,276 @@ def clean_literal(s):
 
     return s
 
+def extract_stringbuilder_patterns(text, verbose=False):
+    """
+    Extract and combine string literals from StringBuilder and str::stream() patterns.
+    These patterns use << operators to concatenate strings and should be treated as combined messages.
+    Returns combined strings and a set of individual strings to exclude from the final output.
+    """
+    combined_strings = []
+    strings_to_exclude = set()
+    
+    # Pattern 1: Handle stream patterns (multi-line)
+    # Look for various stream types followed by multiple << operations
+    stream_patterns = [
+        r'(?:str::stream|std::stream)\s*\(\s*\).*?(?:};|<<\s*std::endl\s*;)',  # str::stream() until closing }; or << std::endl;
+        r'std::(?:cout|cerr)\s*<<[^;]+?<<[^;]+?;',  # std::cout/cerr with multiple << operations
+    ]
+    
+    # Pattern 2: Handle uassert patterns with str::stream
+    uassert_patterns = [
+        r'uassert\s*\([^,]+,\s*(str::stream\(\).*?"),\s*[^)]+\)',  # uassert calls with str::stream expressions
+    ]
+    
+    # Pattern 3: Handle Status constructor patterns with str::stream
+    status_patterns = [
+        r'Status\s*\([^,]+,\s*(str::stream\(\).*?)\)\s*;',  # Status constructor calls with str::stream expressions
+    ]
+    
+    for stream_pattern in stream_patterns:
+        for match in re.finditer(stream_pattern, text, re.DOTALL | re.MULTILINE):
+            full_expression = match.group()
+            
+            # Extract all components (strings and variables)
+            components = []
+            
+            # Split by << and process each part
+            parts = re.split(r'\s*<<\s*', full_expression)
+            for i, part in enumerate(parts[1:], 1):  # Skip the stream part (std::cout/str::stream)
+                part = part.strip().rstrip(';')
+                
+                # Check if this is a string literal or contains multiple adjacent string literals
+                string_matches = list(re.finditer(r'"([^"]*)"', part))
+                if string_matches:
+                    # Handle multiple adjacent string literals (C++ auto-concatenation)
+                    for string_match in string_matches:
+                        string_content = string_match.group(1)
+                        if string_content:
+                            components.append(string_content)
+                            # Only exclude from normal processing if this is part of a multi-component pattern
+                            # We'll decide this later when we know the full component count
+                else:
+                    # This is a variable - represent as %s (but skip std::endl and similar)
+                    if part and not part.startswith('std::') and part != 'std::endl':
+                        components.append('%s')
+            
+            # Combine if we have multiple components with at least one string
+            string_components = [c for c in components if c != '%s']
+            if len(components) > 1 and string_components:
+                # This is a multi-component pattern - exclude individual strings
+                for component in string_components:
+                    strings_to_exclude.add(component.strip())
+                
+                combined = ''.join(components)
+                combined = re.sub(r'\s+', ' ', combined.strip())
+                
+                if combined and len(combined.split()) >= 4:
+                    combined_strings.append(combined)
+                    
+                    if verbose:
+                        match_start = match.start()
+                        line_num = text[:match_start].count('\n') + 1
+                        print(f"    🔗 Combined {len(components)} components in stream pattern at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+            
+            # Also handle simple case of just one meaningful string literal (e.g., std::cerr << "message" << std::endl)
+            elif len(string_components) == 1 and len(components) == 1:
+                # Single string case - don't exclude it, let normal processing handle it
+                pass
+            
+            # Also handle simple case of just string literals without variables
+            elif len(string_components) > 1:
+                # This is a multi-string pattern - exclude individual strings
+                for component in string_components:
+                    strings_to_exclude.add(component.strip())
+                
+                combined = ' '.join(string_components).strip()
+                combined = re.sub(r'\s+', ' ', combined)
+                
+                if combined and len(combined.split()) >= 4:
+                    combined_strings.append(combined)
+                    
+                    if verbose:
+                        match_start = match.start()
+                        line_num = text[:match_start].count('\n') + 1
+                        print(f"    🔗 Combined {len(string_components)} strings in stream pattern at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+    
+    # Process uassert patterns with str::stream
+    for uassert_pattern in uassert_patterns:
+        for match in re.finditer(uassert_pattern, text, re.DOTALL | re.MULTILINE):
+            stream_expression = match.group(1)  # Extract the str::stream part
+            
+            # Extract all components (strings and variables) from the stream expression
+            components = []
+            
+            # Split by << and process each part
+            parts = re.split(r'\s*<<\s*', stream_expression)
+            for i, part in enumerate(parts[1:], 1):  # Skip the stream part (str::stream)
+                part = part.strip()
+                
+                # Check if this is a string literal or contains string literals
+                string_matches = list(re.finditer(r'"([^"]*)"', part))
+                if string_matches:
+                    # Handle multiple adjacent string literals (C++ auto-concatenation)
+                    for string_match in string_matches:
+                        string_content = string_match.group(1)
+                        if string_content:
+                            components.append(string_content)
+                else:
+                    # This is a variable - represent as %s (but skip std::endl and similar)
+                    part_clean = part.rstrip('";')
+                    if part_clean and not part_clean.startswith('std::'):
+                        components.append('%s')
+            
+            # Combine if we have multiple components with at least one string
+            string_components = [c for c in components if c != '%s']
+            if len(components) > 1 and string_components:
+                # This is a multi-component pattern - exclude individual strings
+                for component in string_components:
+                    # Apply the same cleaning as main extraction to ensure exclusion works
+                    try:
+                        cleaned_component = clean_literal(f'"{component}"')
+                    except:
+                        cleaned_component = component
+                    strings_to_exclude.add(cleaned_component.strip())
+                
+                combined = ''.join(components)
+                combined = re.sub(r'\s+', ' ', combined.strip())
+                
+                if combined and len(combined.split()) >= 4:
+                    combined_strings.append(combined)
+                    
+                    if verbose:
+                        match_start = match.start()
+                        line_num = text[:match_start].count('\n') + 1
+                        print(f"    🔗 Combined {len(components)} components in uassert stream pattern at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+
+    # Process Status constructor patterns with str::stream
+    for status_pattern in status_patterns:
+        for match in re.finditer(status_pattern, text, re.DOTALL | re.MULTILINE):
+            stream_expression = match.group(1)  # Extract the str::stream part
+            
+            # Extract all components (strings and variables) from the stream expression
+            components = []
+            
+            # Split by << and process each part
+            parts = re.split(r'\s*<<\s*', stream_expression)
+            for i, part in enumerate(parts[1:], 1):  # Skip the stream part (str::stream)
+                part = part.strip()
+                
+                # Check if this is a string literal or contains string literals
+                string_matches = list(re.finditer(r'"([^"]*)"', part))
+                if string_matches:
+                    # Handle multiple adjacent string literals (C++ auto-concatenation)
+                    for string_match in string_matches:
+                        # Get the full match including quotes, then extract content to preserve escape sequences
+                        full_match = string_match.group(0)  # includes quotes
+                        string_content = full_match[1:-1]   # remove quotes, preserve escape sequences as they appear in source
+                        if string_content:
+                            components.append(string_content)
+                else:
+                    # This is a variable - represent as %s (but skip std::endl and similar)
+                    part_clean = part.rstrip('";')
+                    if part_clean and not part_clean.startswith('std::'):
+                        components.append('%s')
+            
+            # Combine if we have multiple components with at least one string
+            string_components = [c for c in components if c != '%s']
+            if len(components) > 1 and string_components:
+                # This is a multi-component pattern - exclude individual strings
+                for component in string_components:
+                    # Apply the same cleaning as main extraction to ensure exclusion works
+                    try:
+                        cleaned_component = clean_literal(f'"{component}"')
+                    except:
+                        cleaned_component = component
+                    strings_to_exclude.add(cleaned_component.strip())
+                
+                combined = ''.join(components)
+                combined = re.sub(r'\s+', ' ', combined.strip())
+                
+                if combined and len(combined.split()) >= 4:
+                    combined_strings.append(combined)
+                    
+                    if verbose:
+                        match_start = match.start()
+                        line_num = text[:match_start].count('\n') + 1
+                        print(f"    🔗 Combined {len(components)} components in Status stream pattern at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+
+    # Pattern 2: Handle StringBuilder variable patterns
+    # Find StringBuilder variable declarations and track their << operations
+    sb_variable_pattern = r'(?:auto|StringBuilder)\s+(\w+)\s*=\s*StringBuilder\s*\(\s*\)\s*;?'
+    
+    for match in re.finditer(sb_variable_pattern, text):
+        var_name = match.group(1)
+        match_end = match.end()
+        
+        # Look for subsequent << operations with this variable in the remaining text
+        # Expand scope to capture more of the StringBuilder usage
+        remaining_text = text[match_end:match_end + 3000]  # Larger scope for complex patterns
+        
+        # Find all << operations for this variable, processing each line
+        sb_operations = []
+        
+        # Split into lines and process each line that contains the variable
+        lines = remaining_text.split('\n')
+        in_loop = False
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Check if we're entering a loop
+            if 'for (' in line and '{' in line:
+                in_loop = True
+            
+            # Check if we're exiting a loop
+            if in_loop and '}' in line:
+                in_loop = False
+            
+            # Look for << operations with our variable
+            if f'{var_name} <<' in line:
+                # Split the line by << to get individual operations
+                parts = line.split('<<')
+                for i, part in enumerate(parts[1:], 1):  # Skip the variable part
+                    part = part.strip().rstrip(';')
+                    
+                    # Check if this part starts with a string literal
+                    string_match = re.match(r'"([^"]*)"', part)
+                    if string_match:
+                        string_content = string_match.group(1)
+                        if string_content:  # Keep even empty strings if they have meaning
+                            sb_operations.append(string_content)  # Don't strip - preserve exact spacing
+                            strings_to_exclude.add(string_content.strip())  # But exclude the trimmed version
+                        
+                        # Check if there's more after the string (like another << operation)
+                        remaining_part = part[string_match.end():].strip()
+                        if remaining_part.startswith('<<'):
+                            # There's another operation chained, likely a function call
+                            sb_operations.append('%s')
+                    else:
+                        # This is a function call or variable - represent as %s
+                        sb_operations.append('%s')
+        
+        # If we found operations for this StringBuilder variable, combine them
+        if len(sb_operations) > 1:
+            combined = ''.join(sb_operations)
+            combined = re.sub(r'\s+', ' ', combined.strip())  # Normalize whitespace but preserve structure
+            
+            # Check if we have a meaningful message (at least some actual text, not just %s)
+            has_text = any(op for op in sb_operations if op != '%s' and len(op.strip()) > 0)
+            
+            if combined and has_text and len(combined.split()) >= 2:  # Lower threshold for StringBuilder patterns
+                combined_strings.append(combined)
+                
+                if verbose:
+                    match_start = match.start()
+                    line_num = text[:match_start].count('\n') + 1
+                    print(f"    🔗 Combined {len(sb_operations)} operations from StringBuilder variable '{var_name}' starting at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+    
+    return combined_strings, strings_to_exclude
+
 def combine_function_call_strings(text, matches, match_info, verbose=False):
     """
-    Find and combine multiple string literals inside function calls like errmsg() and errdetail_log(),
-    as well as C++ stream operations with multiple string literals.
+    Find and combine multiple string literals inside function calls like errmsg() and errdetail_log().
     These functions often have multiple string literals that should be treated as one combined string.
     Returns combined strings and a set of individual strings to exclude from the final output.
     """
@@ -79,11 +345,6 @@ def combine_function_call_strings(text, matches, match_info, verbose=False):
     # Pattern to find function calls with multiple string literals
     # Matches: errmsg( ... ) or errdetail_log( ... ) containing multiple quoted strings
     function_pattern = r'(errmsg|errdetail_log)\s*\(\s*([^;]+?)\)\s*[,;]'
-    
-    # Pattern to find C++ stream operations with multiple string literals
-    # Matches: std::cout << "string1" << variable << "string2" << std::endl;
-    # Also handles multi-line stream operations
-    stream_pattern = r'(std::(cout|cerr|stream\(\))|[a-zA-Z_][a-zA-Z0-9_]*)\s*<<[^;]*?<<\s*std::endl\s*;'
     
     for match in re.finditer(function_pattern, text, re.DOTALL | re.MULTILINE):
         func_name = match.group(1)
@@ -127,97 +388,6 @@ def combine_function_call_strings(text, matches, match_info, verbose=False):
                     line_num = text[:match_start].count('\n') + 1
                     print(f"    🔗 Combined {len(string_literals)} strings in {func_name}() at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
         # If there's only one string literal, don't exclude it - let it be processed normally
-    
-    # Handle C++ stream operations
-    for match in re.finditer(stream_pattern, text, re.DOTALL | re.MULTILINE):
-        stream_name = match.group(1)
-        full_match = match.group(0)
-        
-        # Extract the content between the first << and << std::endl
-        content_match = re.search(r'<<\s*(.+?)\s*<<\s*std::endl', full_match, re.DOTALL)
-        if not content_match:
-            continue
-            
-        content = content_match.group(1).strip()
-        
-        # Parse the stream operation content to extract strings and variables
-        parts = []
-        
-        # First, handle adjacent string literals by finding and combining them
-        # Look for patterns like: "string1" "string2" (C++ auto-concatenation)
-        combined_content = content
-        
-        # Find all adjacent string literal groups and replace them with combined strings
-        adjacent_pattern = r'"(?:[^"\\]|\\.)*"(?:\s*"(?:[^"\\]|\\.)*")+'
-        
-        for adjacent_match in re.finditer(adjacent_pattern, combined_content):
-            adjacent_group = adjacent_match.group()
-            # Extract all string literals from this group
-            individual_strings = re.findall(r'"(?:[^"\\]|\\.)*"', adjacent_group)
-            
-            # Combine them
-            combined_str_parts = []
-            for s in individual_strings:
-                cleaned = s.strip('"').replace('\\"', '"').replace('\\\\', '\\')
-                combined_str_parts.append(cleaned)
-            
-            combined_str = ''.join(combined_str_parts)
-            
-            # Replace the group with a single quoted string
-            combined_content = combined_content.replace(adjacent_group, f'"{combined_str}"')
-        
-        # Now split by << and process each part
-        stream_parts = re.split(r'\s*<<\s*', combined_content)
-        
-        for part in stream_parts:
-            part = part.strip()
-            if not part:
-                continue
-                
-            # Check if this part is a string literal
-            string_match = re.match(r'^"(?:[^"\\]|\\.)*"$', part)
-            if string_match:
-                string_literal = string_match.group()
-                raw_cleaned = string_literal.strip('"').replace('\\"', '"').replace('\\\\', '\\')
-                if raw_cleaned:
-                    parts.append(raw_cleaned)
-            elif part and not part.startswith('std::'):
-                # This is likely a variable, replace with %s
-                parts.append('%s')
-        
-        # If we found multiple parts, combine them
-        if len(parts) > 1:
-            # Combine the parts
-            combined = ''.join(parts).strip()
-            
-            # Apply additional cleaning
-            combined = re.sub(r'\s+', ' ', combined)  # Normalize whitespace
-            
-            # Apply final cleaning to the combined result
-            final_combined = clean_literal(f'"{combined}"')  # Wrap in quotes for clean_literal
-            
-            if final_combined:  # If it passes the clean_literal checks
-                combined_strings.append(final_combined)
-                
-                # Mark the original individual string literals for exclusion
-                string_pattern = r'"(?:[^"\\]|\\.)*"'
-                for string_match in re.finditer(string_pattern, full_match):
-                    string_literal = string_match.group()
-                    test_literal = string_literal
-                    cleaned_individual = clean_literal(test_literal)
-                    if cleaned_individual:
-                        strings_to_exclude.add(cleaned_individual)
-                
-                if verbose:
-                    # Find line number of the stream operation
-                    match_start = match.start()
-                    line_num = text[:match_start].count('\n') + 1
-                    print(f"    🔗 Combined {len(parts)} parts in {stream_name} << at line {line_num}: {final_combined[:80]}{'...' if len(final_combined) > 80 else ''}")
-                    print(f"    🔗 Combined {len(parts)} parts in {stream_name} << at line {line_num}: {final_combined[:80]}{'...' if len(final_combined) > 80 else ''}")
-            elif verbose:
-                print(f"        ❌ Combined result doesn't meet clean_literal requirements")
-        elif verbose:
-            print(f"        ❌ Only found {len(parts)} part(s)")
     
     return combined_strings, strings_to_exclude
 
@@ -274,19 +444,31 @@ def extract_strings_and_comments(filepath, verbose=False):
     # Post-process to combine concatenated strings in function calls like errmsg() and errdetail_log()
     combined_matches, strings_to_exclude = combine_function_call_strings(text, matches, match_info, verbose)
     
-    # Filter out individual strings that are part of combined function calls
-    filtered_matches = [match for match in matches if match not in strings_to_exclude]
+    # Also extract StringBuilder patterns
+    stringbuilder_matches, stringbuilder_exclude = extract_stringbuilder_patterns(text, verbose)
     
-    # Add the combined strings
+    # Combine all exclusions
+    all_exclusions = strings_to_exclude.union(stringbuilder_exclude)
+    
+    # Filter out individual strings that are part of combined expressions
+    filtered_matches = [match for match in matches if match not in all_exclusions]
+    
+    # Add the combined strings from both function calls and StringBuilder patterns
     if combined_matches:
         filtered_matches.extend(combined_matches)
+    if stringbuilder_matches:
+        filtered_matches.extend(stringbuilder_matches)
 
     if verbose and filtered_matches:
         print(f"    ✓ Extracted {len(filtered_matches)} strings/comments:")
         # Update match_info to reflect filtered results
-        filtered_match_info = [(line_num, match) for line_num, match in match_info if match not in strings_to_exclude]
+        filtered_match_info = [(line_num, match) for line_num, match in match_info if match not in all_exclusions]
         for line_num, match in filtered_match_info:
             print(f"      Line {line_num}: {match[:80]}{'...' if len(match) > 80 else ''}")
+        
+        # Also show the combined StringBuilder strings
+        if stringbuilder_matches:
+            print(f"    ✓ Added {len(stringbuilder_matches)} combined StringBuilder strings")
     elif verbose:
         print(f"    ✗ No valid strings/comments found")
 
