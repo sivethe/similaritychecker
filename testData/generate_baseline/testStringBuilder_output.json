@@ -4,5 +4,7 @@
   "View %s has a collation that does not match the collation of view %s",
   "View cycle detected: %s => %s",
   "View depth limit exceeded; maximum depth is %s",
-  "we're traversing a cycle introduced through unvalidated inserts."
+  "field not found, expected type %s",
+  "we're traversing a cycle introduced through unvalidated inserts.",
+  "wrong type for field (%s) %s != %s"
 ]

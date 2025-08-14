@@ -59,3 +59,16 @@ Status ViewGraph::_validateChildren(uint64_t startingId,
     (*statsMap)[currentId].cumulativeSize += maxSizeOfChildren + currentNode.size;
     return Status::OK();
 }
+
+
+const BSONElement& chk(BSONType t) const {
+        if (t != type()) {
+            StringBuilder ss;
+            if (eoo())
+                ss << "field not found, expected type " << t;
+            else
+                ss << "wrong type for field (" << fieldName() << ") " << type() << " != " << t;
+            uasserted(13111, ss.str());
+        }
+        return *this;
+    }

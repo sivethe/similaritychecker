@@ -350,7 +350,7 @@ def extract_stringbuilder_patterns(text, verbose=False):
 
     # Pattern 2: Handle StringBuilder variable patterns
     # Find StringBuilder variable declarations and track their << operations
-    sb_variable_pattern = r'(?:auto|StringBuilder)\s+(\w+)\s*=\s*StringBuilder\s*\(\s*\)\s*;?'
+    sb_variable_pattern = r'(?:auto|StringBuilder)\s+(\w+)\s*(?:=\s*StringBuilder\s*\(\s*\))?\s*;?'
     
     for match in re.finditer(sb_variable_pattern, text):
         var_name = match.group(1)
@@ -360,28 +360,38 @@ def extract_stringbuilder_patterns(text, verbose=False):
         # Expand scope to capture more of the StringBuilder usage
         remaining_text = text[match_end:match_end + 3000]  # Larger scope for complex patterns
         
-        # Find all << operations for this variable, processing each line
-        sb_operations = []
-        
-        # Split into lines and process each line that contains the variable
+        # Split into lines for analysis
         lines = remaining_text.split('\n')
-        in_loop = False
         
-        for line in lines:
-            line = line.strip()
+        # Find all StringBuilder operations and their conditional context
+        operations_by_branch = {}  # branch_id -> operations
+        current_branch = 'main'
+        branch_counter = 0
+        
+        for line_idx, line in enumerate(lines):
+            line_stripped = line.strip()
             
-            # Check if we're entering a loop
-            if 'for (' in line and '{' in line:
-                in_loop = True
-            
-            # Check if we're exiting a loop
-            if in_loop and '}' in line:
-                in_loop = False
-            
-            # Look for << operations with our variable
-            if f'{var_name} <<' in line:
-                # Split the line by << to get individual operations
-                parts = line.split('<<')
+            # Detect conditional branches
+            if f'{var_name} <<' in line_stripped:
+                # Check if this line is in a conditional context
+                # Look backwards a few lines to see if we're in an if/else block
+                context_lines = lines[max(0, line_idx-5):line_idx]
+                context = ' '.join(l.strip() for l in context_lines)
+                
+                # Determine branch context
+                if 'if (' in context and line_idx > 0:
+                    # Look at the previous few lines for if/else context
+                    prev_line = lines[line_idx-1].strip() if line_idx > 0 else ""
+                    if 'else' in prev_line or any('else' in l for l in context_lines[-3:]):
+                        current_branch = f'else_{branch_counter}'
+                    else:
+                        current_branch = f'if_{branch_counter}'
+                        branch_counter += 1
+                
+                # Extract operations from this line
+                parts = line_stripped.split('<<')
+                line_operations = []
+                
                 for i, part in enumerate(parts[1:], 1):  # Skip the variable part
                     part = part.strip().rstrip(';')
                     
@@ -389,34 +399,36 @@ def extract_stringbuilder_patterns(text, verbose=False):
                     string_match = re.match(r'"([^"]*)"', part)
                     if string_match:
                         string_content = string_match.group(1)
-                        if string_content:  # Keep even empty strings if they have meaning
-                            sb_operations.append(string_content)  # Don't strip - preserve exact spacing
-                            strings_to_exclude.add(string_content.strip())  # But exclude the trimmed version
+                        line_operations.append(string_content)
+                        strings_to_exclude.add(string_content.strip())
                         
-                        # Check if there's more after the string (like another << operation)
+                        # Check if there's more after the string
                         remaining_part = part[string_match.end():].strip()
                         if remaining_part.startswith('<<'):
-                            # There's another operation chained, likely a function call
-                            sb_operations.append('%s')
+                            line_operations.append('%s')
                     else:
                         # This is a function call or variable - represent as %s
-                        sb_operations.append('%s')
-        
-        # If we found operations for this StringBuilder variable, combine them
-        if len(sb_operations) > 1:
-            combined = ''.join(sb_operations)
-            combined = re.sub(r'\s+', ' ', combined.strip())  # Normalize whitespace but preserve structure
-            
-            # Check if we have a meaningful message (at least some actual text, not just %s)
-            has_text = any(op for op in sb_operations if op != '%s' and len(op.strip()) > 0)
-            
-            if combined and has_text and len(combined.split()) >= 2:  # Lower threshold for StringBuilder patterns
-                combined_strings.append(combined)
+                        line_operations.append('%s')
                 
-                if verbose:
-                    match_start = match.start()
-                    line_num = text[:match_start].count('\n') + 1
-                    print(f"    🔗 Combined {len(sb_operations)} operations from StringBuilder variable '{var_name}' starting at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+                # Add to the appropriate branch
+                if current_branch not in operations_by_branch:
+                    operations_by_branch[current_branch] = []
+                operations_by_branch[current_branch].extend(line_operations)
+        
+        # Process each branch separately
+        for branch_name, branch_operations in operations_by_branch.items():
+            if branch_operations:
+                combined = ''.join(branch_operations)
+                combined = re.sub(r'\s+', ' ', combined.strip())
+                
+                has_text = any(op for op in branch_operations if op != '%s' and len(op.strip()) > 0)
+                if combined and has_text and len(combined.split()) >= 2:
+                    combined_strings.append(combined)
+                    
+                    if verbose:
+                        match_start = match.start()
+                        line_num = text[:match_start].count('\n') + 1
+                        print(f"    🔗 StringBuilder pattern from variable '{var_name}' branch '{branch_name}': {combined[:80]}{'...' if len(combined) > 80 else ''}")
     
     return combined_strings, strings_to_exclude
 
