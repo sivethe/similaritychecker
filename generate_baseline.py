@@ -83,10 +83,8 @@ def extract_stringbuilder_patterns(text, verbose=False):
     ]
     
     # Pattern 2: Handle uassert patterns with str::stream
-    uassert_patterns = [
-        r'uassert\s*\([^,]+,\s*(str::stream\(\).*?"),\s*[^)]+\)',  # uassert calls with str::stream expressions
-        r'uasserted\s*\([^,]+,\s*(str::stream\(\).*?)\)\s*;',      # uasserted calls with str::stream expressions
-    ]
+    # Note: We'll handle these with custom extraction logic below instead of regex patterns
+    uassert_patterns = []
     
     # Pattern 3: Handle Status constructor patterns with str::stream
     status_patterns = [
@@ -160,55 +158,143 @@ def extract_stringbuilder_patterns(text, verbose=False):
                         line_num = text[:match_start].count('\n') + 1
                         print(f"    🔗 Combined {len(string_components)} strings in stream pattern at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
     
-    # Process uassert patterns with str::stream
-    for uassert_pattern in uassert_patterns:
-        for match in re.finditer(uassert_pattern, text, re.DOTALL | re.MULTILINE):
-            stream_expression = match.group(1)  # Extract the str::stream part
-            
-            # Extract all components (strings and variables) from the stream expression
-            components = []
-            
-            # Split by << and process each part
-            parts = re.split(r'\s*<<\s*', stream_expression)
-            for i, part in enumerate(parts[1:], 1):  # Skip the stream part (str::stream)
-                part = part.strip()
+    # Extract uassert patterns with custom logic for proper balanced parentheses
+    def extract_uassert_streams(content):
+        """Extract stream expressions from uassert/uasserted calls with proper parentheses balancing"""
+        results = []
+        
+        # Find all uassert and uasserted calls
+        for call_type in ['uassert', 'uasserted']:
+            pos = 0
+            while True:
+                pos = content.find(call_type, pos)
+                if pos == -1:
+                    break
                 
-                # Check if this is a string literal or contains string literals
-                string_matches = list(re.finditer(r'"([^"]*)"', part))
-                if string_matches:
-                    # Handle multiple adjacent string literals (C++ auto-concatenation)
-                    for string_match in string_matches:
-                        string_content = string_match.group(1)
-                        if string_content:
-                            components.append(string_content)
-                else:
-                    # This is a variable - represent as %s (but skip std::endl and similar)
-                    part_clean = part.rstrip('";')
-                    if part_clean and not part_clean.startswith('std::'):
-                        components.append('%s')
+                # Check if this is a word boundary (not part of another word)
+                if pos > 0 and content[pos-1].isalnum():
+                    pos += 1
+                    continue
+                
+                # Find the opening parenthesis
+                paren_pos = content.find('(', pos)
+                if paren_pos == -1:
+                    pos += 1
+                    continue
+                
+                # Extract the full call with balanced parentheses
+                paren_count = 0
+                end_pos = paren_pos
+                while end_pos < len(content):
+                    if content[end_pos] == '(':
+                        paren_count += 1
+                    elif content[end_pos] == ')':
+                        paren_count -= 1
+                        if paren_count == 0:
+                            # Found the end of call
+                            full_call = content[pos:end_pos+1]
+                            
+                            # Extract arguments by finding commas at the right level
+                            args = []
+                            current_arg = ""
+                            paren_level = 0
+                            inside_quotes = False
+                            escape_next = False
+                            
+                            # Start after opening parenthesis
+                            for i, char in enumerate(full_call[full_call.find('(')+1:-1]):
+                                if escape_next:
+                                    current_arg += char
+                                    escape_next = False
+                                    continue
+                                
+                                if char == '\\':
+                                    escape_next = True
+                                    current_arg += char
+                                    continue
+                                
+                                if char == '"' and not escape_next:
+                                    inside_quotes = not inside_quotes
+                                    current_arg += char
+                                    continue
+                                
+                                if inside_quotes:
+                                    current_arg += char
+                                    continue
+                                
+                                if char == '(':
+                                    paren_level += 1
+                                elif char == ')':
+                                    paren_level -= 1
+                                elif char == ',' and paren_level == 0:
+                                    # Found argument separator
+                                    args.append(current_arg.strip())
+                                    current_arg = ""
+                                    continue
+                                
+                                current_arg += char
+                            
+                            # Add the last argument
+                            if current_arg:
+                                args.append(current_arg.strip())
+                            
+                            # For uassert: args[1] should be the stream expression
+                            # For uasserted: args[1] should be the stream expression
+                            if len(args) >= 2 and 'str::stream()' in args[1]:
+                                results.append(args[1])
+                            
+                            break
+                    end_pos += 1
+                
+                pos += 1
+        
+        return results
+    
+    # Process extracted uassert stream expressions
+    uassert_streams = extract_uassert_streams(text)
+    for stream_expression in uassert_streams:
+        # Extract all components (strings and variables) from the stream expression
+        components = []
+        
+        # Split by << and process each part
+        parts = re.split(r'\s*<<\s*', stream_expression)
+        for i, part in enumerate(parts[1:], 1):  # Skip the stream part (str::stream)
+            part = part.strip()
             
-            # Combine if we have multiple components with at least one string
-            string_components = [c for c in components if c != '%s']
-            if len(components) > 1 and string_components:
-                # This is a multi-component pattern - exclude individual strings
-                for component in string_components:
-                    # Apply the same cleaning as main extraction to ensure exclusion works
-                    try:
-                        cleaned_component = clean_literal(f'"{component}"')
-                    except:
-                        cleaned_component = component
-                    strings_to_exclude.add(cleaned_component.strip())
+            # Check if this is a string literal or contains string literals
+            string_matches = list(re.finditer(r'"([^"]*)"', part))
+            if string_matches:
+                # Handle multiple adjacent string literals (C++ auto-concatenation)
+                for string_match in string_matches:
+                    string_content = string_match.group(1)
+                    if string_content:
+                        components.append(string_content)
+            else:
+                # This is a variable - represent as %s (but skip std::endl and similar)
+                part_clean = part.rstrip('";')
+                if part_clean and not part_clean.startswith('std::'):
+                    components.append('%s')
+        
+        # Combine if we have multiple components with at least one string
+        string_components = [c for c in components if c != '%s']
+        if len(components) > 1 and string_components:
+            # This is a multi-component pattern - exclude individual strings
+            for component in string_components:
+                # Apply the same cleaning as main extraction to ensure exclusion works
+                try:
+                    cleaned_component = clean_literal(f'"{component}"')
+                except:
+                    cleaned_component = component
+                strings_to_exclude.add(cleaned_component.strip())
+            
+            combined = ''.join(components)
+            combined = re.sub(r'\s+', ' ', combined)
+            
+            if combined and len(combined.split()) >= 3:
+                combined_strings.append(combined)
                 
-                combined = ''.join(components)
-                combined = re.sub(r'\s+', ' ', combined.strip())
-                
-                if combined and len(combined.split()) >= 4:
-                    combined_strings.append(combined)
-                    
-                    if verbose:
-                        match_start = match.start()
-                        line_num = text[:match_start].count('\n') + 1
-                        print(f"    🔗 Combined {len(components)} components in uassert stream pattern at line {line_num}: {combined[:80]}{'...' if len(combined) > 80 else ''}")
+                if verbose:
+                    print(f"    🔧 Extracted uassert stream pattern: {combined[:80]}{'...' if len(combined) > 80 else ''}")
 
     # Process Status constructor patterns with str::stream
     for status_pattern in status_patterns:

@@ -56,3 +56,33 @@ BSONObj BSONElement::embeddedObjectUserCheck() const {
     uasserted(10065,
               str::stream() << "invalid parameter: expected an object (" << fieldName() << ")");
 }
+
+// src is printed out as debugging information.  Maybe it is actually somehow the 'source' of o?
+GeoHash GeoHashConverter::hash(const BSONObj& o, const BSONObj* src) const {
+    BSONObjIterator i(o);
+    uassert(13067,
+            str::stream() << "geo field is empty" << (src ? causedBy((*src).toString()) : ""),
+            i.more());
+
+    BSONElement x = i.next();
+    uassert(13068,
+            str::stream() << "geo field only has 1 element"
+                          << causedBy(src ? (*src).toString() : x.toString()),
+            i.more());
+
+    BSONElement y = i.next();
+    uassert(13026,
+            str::stream() << "geo values must be 'legacy coordinate pairs' for 2d indexes"
+                          << causedBy(src ? (*src).toString() : BSON_ARRAY(x << y).toString()),
+            x.isNumber() && y.isNumber());
+
+    uassert(13027,
+            str::stream() << "point not in interval of [ " << _params.min << ", " << _params.max
+                          << " ]"
+                          << causedBy(src ? (*src).toString()
+                                          : BSON_ARRAY(x.number() << y.number()).toString()),
+            x.number() <= _params.max && x.number() >= _params.min && y.number() <= _params.max &&
+                y.number() >= _params.min);
+
+    return GeoHash(convertToHashScale(x.number()), convertToHashScale(y.number()), _params.bits);
+}
