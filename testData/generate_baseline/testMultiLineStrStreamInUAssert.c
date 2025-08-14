@@ -49,3 +49,10 @@ Value evaluate(const ExpressionSubstrBytes& expr, const Document& root, Variable
     }
     return Value(StringData(str).substr(lower, length));
 }
+
+BSONObj BSONElement::embeddedObjectUserCheck() const {
+    if (MONGO_likely(isABSONObj()))
+        return BSONObj(value(), BSONObj::LargeSizeTrait{});
+    uasserted(10065,
+              str::stream() << "invalid parameter: expected an object (" << fieldName() << ")");
+}

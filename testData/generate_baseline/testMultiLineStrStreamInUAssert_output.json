@@ -8,5 +8,6 @@
   "If lower > str.length() then string::substr() will throw out_of_range, so return an",
   "If the passed length is negative, we should return the rest of the string.",
   "empty string if lower is not a valid string index.",
+  "invalid parameter: expected an object (%s)",
   "means we're in the middle of a UTF-8 character."
 ]

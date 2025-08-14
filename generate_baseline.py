@@ -85,6 +85,7 @@ def extract_stringbuilder_patterns(text, verbose=False):
     # Pattern 2: Handle uassert patterns with str::stream
     uassert_patterns = [
         r'uassert\s*\([^,]+,\s*(str::stream\(\).*?"),\s*[^)]+\)',  # uassert calls with str::stream expressions
+        r'uasserted\s*\([^,]+,\s*(str::stream\(\).*?)\)\s*;',      # uasserted calls with str::stream expressions
     ]
     
     # Pattern 3: Handle Status constructor patterns with str::stream
