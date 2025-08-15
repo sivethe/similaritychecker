@@ -1,0 +1,18 @@
+[
+  "%s: Invalid range, ending index is in the middle of a UTF-8 character.",
+  "%s: Invalid range, starting index is a UTF-8 continuation byte.",
+  "%s: length must be a numeric type (is BSON type %s)",
+  "%s: starting index must be a numeric type (is BSON type %s)",
+  "%s: starting index must be non-negative (got: %s)",
+  "Check the byte after the last character we'd return. If it is a continuation byte, that",
+  "If lower > str.length() then string::substr() will throw out_of_range, so return an",
+  "If the passed length is negative, we should return the rest of the string.",
+  "empty string if lower is not a valid string index.",
+  "geo field is empty",
+  "geo field only has 1 element%s",
+  "geo values must be 'legacy coordinate pairs' for 2d indexes%s%s",
+  "invalid parameter: expected an object (%s)",
+  "means we're in the middle of a UTF-8 character.",
+  "point not in interval of [ %s, %s ]%s%s",
+  "src is printed out as debugging information. Maybe it is actually somehow the 'source' of o?"
+]

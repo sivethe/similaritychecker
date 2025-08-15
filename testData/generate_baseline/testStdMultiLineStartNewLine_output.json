@@ -1,0 +1,7 @@
+[
+  "Field names for a 'clustered' index spec have already been validated through",
+  "The field '%s' for an _id index must be {_id: 1}, but got %s",
+  "The field '%s' is not valid for an _id index specification. Specification: %s",
+  "can't hide _id index",
+  "validateIndexSpec() should have already verified that 'keyPatternElem' is an object."
+]

@@ -1,0 +1,6 @@
+[
+  "FieldPath field names may not be empty strings.",
+  "FieldPath field names may not contain '.', given '%s'.",
+  "FieldPath field names may not contain '\\0', given '%s'.",
+  "FieldPath field names may not start with '$', given '%s'."
+]

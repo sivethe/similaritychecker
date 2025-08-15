@@ -1,0 +1,7 @@
+[
+  "Any errors here will be handled in MutateQueryWithPipeline",
+  "Check the next stages to be one of the allowed stages.",
+  "Pre-checks the $changeStream pipeline stages to ensure that only supported stages are added to the $changestream pipeline, also ensures that $changeStream is the first stage in the pipeline. This function is called before the pipeline is mutated. It also checks if the feature is enabled.",
+  "Stage %s is not permitted in a $changeStream pipeline",
+  "The first change should be $changeStream."
+]

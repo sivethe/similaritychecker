@@ -1,0 +1,10 @@
+[
+  "If we've encountered the id of the starting node, we've found a cycle in the graph.",
+  "Return early if we've already exceeded the maximum depth. This will also be triggered if",
+  "View %s has a collation that does not match the collation of view %s",
+  "View cycle detected: %s => %s",
+  "View depth limit exceeded; maximum depth is %s",
+  "field not found, expected type %s",
+  "we're traversing a cycle introduced through unvalidated inserts.",
+  "wrong type for field (%s) %s != %s"
+]

@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": "${command:pickArgs}",
+            "env": { "PYTHONPATH": "${workspaceRoot}"}
+        },
+        {
+            "name": "Debug extract_stream_operators.py with testStringBuilderFunction.c",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/extract_stream_operators.py",
+            "console": "integratedTerminal",
+            "args": [
+                "testData/generate_baseline/testStringBuilderFunction.c",
+                "-v"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": { "PYTHONPATH": "${workspaceFolder}"}
+        },
+        {
+            "name": "Debug extract_stream_operators.py (Custom Args)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/extract_stream_operators.py",
+            "console": "integratedTerminal",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": { "PYTHONPATH": "${workspaceFolder}"}
+        }
+    ]
+}
