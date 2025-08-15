@@ -1,12 +1,12 @@
-# Similarity Checker v3
+# Similarity Checker
 
 A comprehensive toolkit for analyzing C/C++ source code, extracting string patterns from stream operators, visualizing AST trees, and performing similarity comparisons between files. This toolset is designed for code analysis, baseline generation, and similarity matching workflows.
 
 ## Overview
 
-This project consists of three main Python tools that work together to provide a complete code analysis pipeline:
+This project consists of four main Python tools that work together to provide a complete code analysis pipeline:
 
-1. **`extract_stream_operators.py`** - Core extraction engine for C++ stream operator patterns
+1. **`extract_strings_from_cplusplus.py`** - Core extraction engine for C++ stream operator patterns
 2. **`generate_baseline_treesitter.py`** - Batch processor for creating baselines from multiple files
 3. **`ast_visualizer_standalone.py`** - AST visualization tool for understanding code structure
 4. **`rapidfuzz_file_compare.py`** - High-performance similarity matcher for comparing extracted patterns
@@ -36,7 +36,7 @@ pip install pybloom-live
 
 ## Tools Reference
 
-### 1. extract_stream_operators.py
+### 1. extract_strings_from_cplusplus.py
 
 **Purpose**: Core extraction engine that parses C++ files using tree-sitter and extracts stream operator (`<<`) patterns.
 
@@ -49,13 +49,13 @@ pip install pybloom-live
 **Usage**:
 ```bash
 # Extract patterns from a single file
-python3 extract_stream_operators.py input.cpp
+python3 extract_strings_from_cplusplus.py input.cpp
 
 # Save output to file
-python3 extract_stream_operators.py input.cpp output.json
+python3 extract_strings_from_cplusplus.py input.cpp output.json
 
 # Verbose mode for debugging
-python3 extract_stream_operators.py input.cpp --verbose
+python3 extract_strings_from_cplusplus.py input.cpp --verbose
 ```
 
 **Example Output**:
@@ -69,7 +69,7 @@ python3 extract_stream_operators.py input.cpp --verbose
 
 ### 2. generate_baseline_treesitter.py
 
-**Purpose**: Batch processor that wraps `extract_stream_operators.py` to handle multiple files and directories.
+**Purpose**: Batch processor that wraps `extract_strings_from_cplusplus.py` to handle multiple files and directories.
 
 **Key Features**:
 - Process entire directory trees
@@ -158,7 +158,7 @@ python3 rapidfuzz_file_compare.py source.txt target.txt --threshold 60
 
 ```bash
 # 1. Extract patterns from a single file
-python3 extract_stream_operators.py main.cpp patterns.json
+python3 extract_strings_from_cplusplus.py main.cpp patterns.json
 
 # 2. Visualize the AST for debugging
 python3 ast_visualizer_standalone.py main.cpp --console
@@ -190,7 +190,7 @@ python3 rapidfuzz_file_compare.py baseline.json reference_baseline.json \
 python3 ast_visualizer_standalone.py problematic_file.cpp -o debug_ast --format json
 
 # Extract with verbose error reporting
-python3 extract_stream_operators.py problematic_file.cpp --verbose
+python3 extract_strings_from_cplusplus.py problematic_file.cpp --verbose
 
 # Check what the baseline generator sees
 python3 generate_baseline_treesitter.py problematic_file.cpp debug.json --verbose --fail-on-error
@@ -234,7 +234,7 @@ The comparison tool provides multiple similarity metrics:
 
 All tools include robust error handling:
 
-- **extract_stream_operators.py**: Reports unsupported AST patterns with detailed context
+- **extract_strings_from_cplusplus.py**: Reports unsupported AST patterns with detailed context
 - **generate_baseline_treesitter.py**: Continues processing on errors unless `--fail-on-error` is used
 - **ast_visualizer_standalone.py**: Gracefully handles parsing failures and missing dependencies
 - **rapidfuzz_file_compare.py**: Validates input files and similarity parameters

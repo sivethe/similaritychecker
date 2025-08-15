@@ -14,10 +14,10 @@
             "env": { "PYTHONPATH": "${workspaceRoot}"}
         },
         {
-            "name": "Debug extract_stream_operators.py with testStringBuilderFunction.c",
+            "name": "Debug extract_strings_from_cplusplus.py with testStringBuilderFunction.c",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/extract_stream_operators.py",
+            "program": "${workspaceFolder}/extract_strings_from_cplusplus.py",
             "console": "integratedTerminal",
             "args": [
                 "testData/generate_baseline/testStringBuilderFunction.c",
@@ -27,10 +27,10 @@
             "env": { "PYTHONPATH": "${workspaceFolder}"}
         },
         {
-            "name": "Debug extract_stream_operators.py (Custom Args)",
+            "name": "Debug extract_strings_from_cplusplus.py (Custom Args)",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/extract_stream_operators.py",
+            "program": "${workspaceFolder}/extract_strings_from_cplusplus.py",
             "console": "integratedTerminal",
             "args": [],
             "cwd": "${workspaceFolder}",

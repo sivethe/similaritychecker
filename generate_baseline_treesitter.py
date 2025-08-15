@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Tree-sitter based C++ parser for extracting strings and comments.
-This script now acts as a wrapper around extract_stream_operators.py.
+This script now acts as a wrapper around extract_strings_from_cplusplus.py.
 """
 
 import argparse
@@ -15,29 +15,29 @@ from typing import List, Set, Dict, Any, Optional
 
 
 class ExtractorWrapper:
-    """Wrapper that calls extract_stream_operators.py to do the actual parsing."""
+    """Wrapper that calls extract_strings_from_cplusplus.py to do the actual parsing."""
     
     def __init__(self, verbose: bool = False, fail_on_error: bool = False):
         self.verbose = verbose
         self.fail_on_error = fail_on_error
         self.error_count = 0  # Track number of files that failed
-        # Find the extract_stream_operators.py script
+        # Find the extract_strings_from_cplusplus.py script
         script_dir = Path(__file__).parent
-        self.extractor_script = script_dir / "extract_stream_operators.py"
+        self.extractor_script = script_dir / "extract_strings_from_cplusplus.py"
         
         if not self.extractor_script.exists():
-            raise FileNotFoundError(f"extract_stream_operators.py not found at {self.extractor_script}")
+            raise FileNotFoundError(f"extract_strings_from_cplusplus.py not found at {self.extractor_script}")
     
     def get_error_count(self) -> int:
         """Get the number of files that failed extraction."""
         return self.error_count
 
     def extract_from_file(self, file_path: str) -> List[str]:
-        """Extract all strings from a C++ file by calling extract_stream_operators.py."""
+        """Extract all strings from a C++ file by calling extract_strings_from_cplusplus.py."""
         try:
             print(f"Extracting from {file_path}.")
 
-            # Build command to call extract_stream_operators.py
+            # Build command to call extract_strings_from_cplusplus.py
             cmd = [sys.executable, str(self.extractor_script), str(file_path)]
             
             # Run the script and capture output
@@ -101,7 +101,7 @@ def should_exclude_path(path: str, exclude_patterns: List[str]) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Extract strings and comments from C++ files using tree-sitter (via extract_stream_operators.py)',
+        description='Extract strings and comments from C++ files using tree-sitter (via extract_strings_from_cplusplus.py)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -122,7 +122,7 @@ Examples:
     parser.add_argument('--no-default-excludes', action='store_true',
                        help='Disable default exclusions (build/, .git/, node_modules/, etc.)')
     parser.add_argument('--fail-on-error', action='store_true',
-                       help='Fail immediately if extract_stream_operators.py returns an error for any file. '
+                       help='Fail immediately if extract_strings_from_cplusplus.py returns an error for any file. '
                             'By default, errors are logged but processing continues.')
     
     args = parser.parse_args()

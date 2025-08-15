@@ -11,7 +11,7 @@ converting them to string patterns according to specific rules:
 - other types -> fail with detailed error
 
 Usage:
-    python3 extract_stream_operators.py input.cpp [output.json]
+    python3 extract_strings_from_cplusplus.py input.cpp [output.json]
 """
 
 import argparse
