@@ -496,7 +496,7 @@ class StreamOperatorExtractor:
             concatenated_str = self._process_concatenated_string(node, source_code)
 
             if not self._check_min_length(concatenated_str):
-                return
+                return (False, None, "")
 
             self.string_literals.add(concatenated_str)
 

@@ -7,6 +7,10 @@ errmsg("PlanExecutor error during aggregation :: caused by :: "
 errmsg("The limit field in delete objects must be 0 "
        "or 1. Got " INT64_FORMAT, limit)
 
+// Verify that concatenated_string pattern with less than 3 words (default min-words) is ignored without error
+errmsg("This"
+       "is")
+
 // Verify multi-line errdetail_log
 errdetail_log("PlanExecutor error during aggregation :: caused by :: "
               "Invalid range: Expected the sortBy field to be a Date, "

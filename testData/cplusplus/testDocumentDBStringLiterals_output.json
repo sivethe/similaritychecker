@@ -1,13 +1,14 @@
 [
-  "derived shard key field generated from the real shard key",
-  "Verify string-concatenation both in single and multi line",
-  "unique ID of the object",
-  "the document NB: Ensure to match DOCUMENT_DATA_TABLE_DOCUMENT_VAR_ contants defined in collection.h if you decide changing definiton or position of document column.",
-  "Verify multi-line errmsg",
   "Verify that comments are ignored inside concatenated_string parsing",
+  "derived shard key field generated from the real shard key",
+  "unique ID of the object",
+  "Verify that concatenated_string pattern with less than 3 words (default min-words) is ignored without error",
+  "Verify string-concatenation both in single and multi line",
+  "Verify multi-line errmsg",
+  "the document NB: Ensure to match DOCUMENT_DATA_TABLE_DOCUMENT_VAR_ contants defined in collection.h if you decide changing definiton or position of document column.",
   "Verify multi-line errdetail_log",
-  "PlanExecutor error during aggregation :: caused by :: Invalid range: Expected the sortBy field to be a Date, but it was %s",
-  "The limit field in delete objects must be 0 or 1. Got %s",
   "SELECT shard_key_value FROM %s.documents_%s WHERE object_id = $1::%s",
-  "CREATE TABLE %s (shard_key_value bigint not null,object_id %s.bson not null,document %s.bson not null"
+  "PlanExecutor error during aggregation :: caused by :: Invalid range: Expected the sortBy field to be a Date, but it was %s",
+  "CREATE TABLE %s (shard_key_value bigint not null,object_id %s.bson not null,document %s.bson not null",
+  "The limit field in delete objects must be 0 or 1. Got %s"
 ]
