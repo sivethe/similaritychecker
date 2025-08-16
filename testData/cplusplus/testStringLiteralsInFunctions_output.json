@@ -1,3 +1,4 @@
 [
-  "User is not authorized to perform this operation"
+  "User is not authorized to perform this operation",
+  "Unauthenticated user is trying to perform an operation"
 ]

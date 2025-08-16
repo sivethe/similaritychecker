@@ -1,7 +1,16 @@
 [
   "Function %s takes [%s] arguments. However, function was called with %s arguments.",
   "Invalid use of Function1 [%s]. Function was called with arguments: %s",
+  "Testing std::cout =>Expected A1 instead of ",
+  "Testing std::cout =>Expected A2 instead of %s",
+  "Testing std::cout =>Expected A3 instead of %s",
+  "Testing std::cerr =>Expected B1 instead of ",
+  "Testing std::cerr =>Expected B2 instead of %s",
+  "Testing std::cerr =>Expected B3 instead of %s",
+  "Testing adjacent-string-literals =>Expected C1 instead of %s. Please specify C2 or any other variable in the C* family for this scenario to work.",
   "Format: python3 SomeSamplePythonFile.py %s => %s",
   "Verify StringBuilder usage",
-  "Verify multi-line InsertionOperator with function at end"
+  "Verify multi-line InsertionOperator with function at end",
+  "Simple out parameters",
+  "Test adjacent string literals"
 ]
