@@ -13,6 +13,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: similaritychecker
+        ref: v2
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -38,7 +39,7 @@ jobs:
       working-directory: similaritychecker
       run: |
         echo "Generating baseline for documentdb..."
-        python3 generate_baseline_treesitter.py ../documentdb documentdb_baseline.json --fail-on-error
+        python3 generate_baseline_treesitter.py ../documentdb documentdb_baseline.json --exclude "*/roaring_bitmaps/*" --fail-on-error
         
         echo "documentdb baseline generation completed."
         echo "Generated $(jq length documentdb_baseline.json) unique string patterns."

@@ -111,7 +111,7 @@ class StreamOperatorExtractor:
         """Raise an error at the specified node."""
         node_text = self._get_node_text(node, source_code)
         error_msg = (
-            f"Unsupported node type in << operator: '{node.type}'\n"
+            f"Error parsing: '{node.type}'\n"
             f"  Node text: {node_text}\n"
             f"  Node type: {node.type}\n"
             f"  Node position: line {node.start_point[0] + 1}, column {node.start_point[1] + 1}"            
@@ -142,7 +142,11 @@ class StreamOperatorExtractor:
             #Exclude nodes that we dont care about
             for child in node.children[2:]:
                 if right_node is not None:
-                    self._raise_error_at_node(node, source_code)
+                    operator_text = self._get_node_text(operator_node, source_code).strip()
+                    if operator_text != '<<':
+                        return None
+                    else:
+                        self._raise_error_at_node(node, source_code)
 
                 if child.type == 'comment':
                     continue
