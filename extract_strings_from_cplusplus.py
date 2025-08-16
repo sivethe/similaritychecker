@@ -16,6 +16,7 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -54,8 +55,8 @@ class StreamOperatorExtractor:
         self.extracted_patterns = []
         self.stringbuilder_patterns = []
         self.stringbuilder_identifiers = {}
-        self.comments = []
-        self.string_literals = []
+        self.comments = set()
+        self.string_literals = set()
         self.errors = []
         
         # Initialize bloom filter for tracking visited string_literal nodes
@@ -413,13 +414,21 @@ class StreamOperatorExtractor:
             return
         
         comment_text = self._get_node_text(node, source_code)
-        comment_text = comment_text.strip(' /*')
-        
+        if comment_text.startswith("/*"):
+            # Remove /* and */
+            comment_text = comment_text[2:-2]
+            # Remove leading '*' and whitespace from each line
+            lines = [re.sub(r'^\s*\* ?', '', line) for line in comment_text.splitlines()]
+            comment_text = " ".join(line.strip() for line in lines if line.strip())
+        elif comment_text.startswith("//"):
+            comment_text = comment_text[2:].strip()
+        comment_text = comment_text.strip()
+
         # Ignore comments with less than 3 words
         if not self._check_min_length(comment_text):
             return
             
-        self.comments.append(comment_text)
+        self.comments.add(comment_text)
 
     def _process_string_literal(self, node: Node, source_code: str) -> None:
         """Process string literal nodes to extract their values."""
@@ -436,7 +445,7 @@ class StreamOperatorExtractor:
         string_literal_key = f"{node.start_byte}_{node.end_byte}_{node_text}"        
         if string_literal_key not in self.string_literal_bloom:
             norm_str = self._normalize_string_for_output(node_text)
-            self.string_literals.append(norm_str)
+            self.string_literals.add(norm_str)
             self.string_literal_bloom.add(string_literal_key)
    
     def _extract_from_node(self, node: Node, source_code: str, path: str = "") -> tuple:
@@ -474,6 +483,15 @@ class StreamOperatorExtractor:
         # Process comment nodes to extract strings
         elif node.type == 'comment':
             self._process_comment(node, source_code)
+
+        # Process concatenated_string to combine multiple string literals into a single string
+        elif node.type == 'concatenated_string':
+            concatenated_str = self._process_concatenated_string(node, source_code)
+
+            if not self._check_min_length(concatenated_str):
+                return
+
+            self.string_literals.add(concatenated_str)
 
         # Finally, extract all string literals if they have not been processed already
         elif node.type == 'string_literal':
@@ -541,8 +559,8 @@ class StreamOperatorExtractor:
         self.extracted_patterns = []
         self.stringbuilder_patterns = []
         self.stringbuilder_identifiers = {}
-        self.comments = []
-        self.string_literals = []
+        self.comments = set()
+        self.string_literals = set()
         self.errors = []
         
         # Extract patterns

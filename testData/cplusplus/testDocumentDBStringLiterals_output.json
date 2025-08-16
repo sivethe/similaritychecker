@@ -1,0 +1,5 @@
+[
+  "Verify multi-line errmsg",
+  "Verify multi-line errdetail_log",
+  "PlanExecutor error during aggregation :: caused by :: Invalid range: Expected the sortBy field to be a Date, but it was %s"
+]
