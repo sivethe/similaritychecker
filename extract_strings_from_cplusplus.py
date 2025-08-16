@@ -202,9 +202,16 @@ class StreamOperatorExtractor:
         # Process all child nodes for string
         for child in node.children:
             child_text = self._get_node_text(child, source_code)
-            if child.type == 'string_literal':
+            if child.type == 'string_literal':      
                 concatenated_str += self._normalize_string_for_output(child_text) 
                 self._mark_string_literal_as_processed(child, source_code)
+            elif child.type in ['ERROR', 'identifier']:
+                # We only extract string literals but they can be hidden behind macros that tree-sitter is not aware of
+                # Replace those macros with %s
+                concatenated_str += "%s"
+            elif child.type == 'comment':
+                # Ignore comments
+                continue
             else:
                 error_msg = (
                     f"Unsupported node type in _process_concatenated_string: '{child.type}'\n"
