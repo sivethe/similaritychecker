@@ -1,0 +1,100 @@
+name: Repository Similarity Analysis
+
+on:
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  similarity-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+    - name: Checkout similarity checker
+      uses: actions/checkout@v4
+      with:
+        path: similaritychecker
+        ref: v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tree-sitter tree-sitter-cpp rapidfuzz pybloom-live
+    
+    - name: Clone source and target repositories
+      run: |
+        echo "Cloning DocumentDB repository..."
+        git clone --depth 1 https://github.com/microsoft/documentdb documentdb
+        echo "documentdb repository cloned."
+        
+        echo "Cloning MongoDB repository..."
+        git clone --depth 1 https://github.com/mongodb/mongo mongo
+        echo "mongo repository cloned."
+    
+    - name: Generate baseline for DocumentDB
+      working-directory: similaritychecker
+      run: |
+        echo "Generating baseline for documentdb..."
+        python3 generate_baseline_treesitter.py ../documentdb documentdb_baseline.json --fail-on-error
+        
+        echo "documentdb baseline generation completed."
+        echo "Generated $(jq length documentdb_baseline.json) unique string patterns."
+    
+    - name: Generate baseline for MongoDB
+      working-directory: similaritychecker
+      run: |
+        echo "Generating baseline for mongo..."
+        python3 generate_baseline_treesitter.py ../mongo mongo_baseline.json
+        
+        echo "mongo baseline generation completed."
+        echo "Generated $(jq length mongo_baseline.json) unique string patterns."
+    
+    - name: Compare repositories using RapidFuzz
+      working-directory: similaritychecker
+      run: |
+        echo "Comparing repositories using RapidFuzz..."
+        python3 rapidfuzz_file_compare.py \
+          documentdb_baseline.json \
+          mongo_baseline.json \
+          --threshold 70 \
+          --max-matches 10
+        
+        # Find the generated comparison files
+        MATCHES_FILE=$(ls *_matches_*pct_*.json | head -1)
+        UNMATCHED_FILE=$(ls *_unmatched_*pct_*.json | head -1)
+        
+        echo "Comparison completed."
+        echo "Matches file: $MATCHES_FILE"
+        echo "Unmatched file: $UNMATCHED_FILE"
+    
+    - name: Upload baseline files
+      uses: actions/upload-artifact@v4
+      with:
+        name: similarity-analysis-baselines-${{ github.run_number }}
+        path: |
+          similaritychecker/documentdb_baseline.json
+          similaritychecker/mongo_baseline.json
+        retention-days: 30
+    
+    - name: Upload comparison results
+      uses: actions/upload-artifact@v4
+      with:
+        name: similarity-analysis-results-${{ github.run_number }}
+        path: |
+          similaritychecker/*_matches_*pct_*.json
+          similaritychecker/*_unmatched_*pct_*.json
+        retention-days: 30
+    
+    - name: Upload analysis logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: similarity-analysis-logs-${{ github.run_number }}
+        path: |
+          similaritychecker/*.log
+        retention-days: 7
+        if-no-files-found: ignore
