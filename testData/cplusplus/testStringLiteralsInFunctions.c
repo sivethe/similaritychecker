@@ -1,0 +1,1 @@
+return Outcome(Err100, "User is not authorized to perform this operation");

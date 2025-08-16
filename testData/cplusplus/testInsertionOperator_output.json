@@ -1,0 +1,7 @@
+[
+  "Function %s takes [%s] arguments. However, function was called with %s arguments.",
+  "Invalid use of Function1 [%s]. Function was called with arguments: %s",
+  "Format: python3 SomeSamplePythonFile.py %s => %s",
+  "Verify StringBuilder usage",
+  "Verify multi-line InsertionOperator with function at end"
+]

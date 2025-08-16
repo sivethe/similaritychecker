@@ -246,10 +246,31 @@ All tools include robust error handling:
 - **Tree Depth**: Limit AST visualization depth for very large files to avoid memory issues
 - **Similarity Thresholds**: Higher thresholds (80%+) run faster but may miss valid matches
 
+## Testing
+
+The project includes an automated test suite for validating the extraction tools:
+
+```bash
+# Run all tests
+python3 tests/test_extract_strings_from_cplusplus.py
+
+# Run with detailed output comparisons
+python3 tests/test_extract_strings_from_cplusplus.py -v
+```
+
+See `tests/README.md` for detailed information on adding new test cases.
+
 ## File Structure
 
 ```
+tests/                          # Automated test suites
+├── test_extract_strings_from_cplusplus.py  # Tests for string extraction
+└── README.md                   # Test documentation
+
 testData/
+├── cplusplus/                  # Test files for extract_strings_from_cplusplus.py
+│   ├── *.c, *.h               # C++ test input files
+│   └── *_output.json          # Expected extraction outputs
 ├── generate_baseline/          # Test files for baseline generation
 │   ├── testFunction.c         # Example C function
 │   ├── testStringBuilder.c    # String builder patterns

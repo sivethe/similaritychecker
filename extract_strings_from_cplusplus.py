@@ -490,7 +490,7 @@ class StreamOperatorExtractor:
         # If the current node is not binary_expression but has_stringbuilder_operation is true,
         # it means that its child nodes returned it a string builder pattern which it should capture.
         if node.type != 'binary_expression' and has_stringbuilder_operation:
-            if node.type == 'expression_statement' and identifier_text is not None:
+            if identifier_text is not None:
                 # Recursively extract the identifier from the children
                 existing_identifier_value = self.stringbuilder_identifiers.get(identifier_text, None)
                 if existing_identifier_value is None:
